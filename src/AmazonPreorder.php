@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Fetches preorder info for an inbound fulfillment shipment or confirms it.
@@ -35,8 +35,8 @@ class AmazonPreorder extends AmazonInboundCore {
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.</p>
      * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    public function __construct($s = null, $id = null, $mock = false, $m = null, $config = null){
-        parent::__construct($s, $mock, $m, $config);
+    public function __construct($config, $id = null, $mock = false, $m = null){
+        parent::__construct($config, $mock, $m);
 
         if($id){
             $this->setShipmentId($id);
@@ -68,7 +68,7 @@ class AmazonPreorder extends AmazonInboundCore {
     public function setNeedByDate($d) {
         try{
             $this->options['NeedByDate'] = strstr($this->genTime($d), 'T', true);
-        } catch (Exception $e){
+        } catch (\Exception $e){
             unset($this->options['NeedByDate']);
             $this->log('Error: '.$e->getMessage(), 'Warning');
             return false;

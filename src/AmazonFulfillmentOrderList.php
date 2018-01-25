@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Fetches a list of fulfillment orders from Amazon.
@@ -10,7 +10,7 @@ namespace SellerCrew\AmazonMWS;
  * are required, filters for start time and method are available.
  * This object can use tokens when retrieving the list.
  */
-class AmazonFulfillmentOrderList extends AmazonOutboundCore implements Iterator{
+class AmazonFulfillmentOrderList extends AmazonOutboundCore implements \Iterator{
     protected $orderList;
     protected $tokenFlag = false;
     protected $tokenUseFlag = false;
@@ -23,15 +23,14 @@ class AmazonFulfillmentOrderList extends AmazonOutboundCore implements Iterator{
      * The parameters are passed to the parent constructor, which are
      * in turn passed to the AmazonCore constructor. See it for more information
      * on these parameters and common methods.
-     * @param string $s [optional] <p>Name for the store you want to use.
-     * This parameter is optional if only one store is defined in the config file.</p>
+     * @param array $config <p>The config file containing seller credentials and log settings</p>
      * @param boolean $mock [optional] <p>This is a flag for enabling Mock Mode.
      * This defaults to <b>FALSE</b>.</p>
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.</p>
      * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    public function __construct($s = null, $mock = false, $m = null, $config = null) {
-        parent::__construct($s, $mock, $m, $config);
+    public function __construct($config, $mock = false, $m = null) {
+        parent::__construct($config, $mock, $m);
 
         $this->options['Action'] = 'ListAllFulfillmentOrders';
     }
@@ -259,7 +258,7 @@ class AmazonFulfillmentOrderList extends AmazonOutboundCore implements Iterator{
         $list = array();
         $i = 0;
         foreach($this->orderList as $x){
-            $list[$i] = new AmazonFulfillmentOrder($this->storeName,$x['SellerFulfillmentOrderId'],$this->mockMode,$this->mockFiles,$this->config);
+            $list[$i] = new AmazonFulfillmentOrder($this->config,$x['SellerFulfillmentOrderId'],$this->mockMode,$this->mockFiles);
             $list[$i]->mockIndex = $this->mockIndex;
             $list[$i]->fetchOrder();
             $i++;

@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of financial events from Amazon.

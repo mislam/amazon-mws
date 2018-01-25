@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of registered subscription destinations from Amazon.
@@ -10,7 +10,7 @@ namespace SellerCrew\AmazonMWS;
  * In order to do this, a marketplace ID is needed. The current store's
  * configured marketplace is used by default.
  */
-class AmazonSubscriptionDestinationList extends AmazonSubscriptionCore implements Iterator{
+class AmazonSubscriptionDestinationList extends AmazonSubscriptionCore implements \Iterator{
     protected $destinationList;
     protected $i = 0;
 

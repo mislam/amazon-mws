@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * The main core of the Amazon class.
@@ -83,13 +83,14 @@ abstract class AmazonCore{
     protected $throttleSafe;
     protected $throttleGroup;
     protected $throttleStop = false;
-    protected $storeName;
     protected $options;
     protected $config;
     protected $mockMode = false;
     protected $mockFiles;
     protected $mockIndex = 0;
+    protected $logmute;
     protected $logpath;
+    protected $logfunction;
     protected $env;
     protected $rawResponses = array();
     protected $disableSslVerify = false;
@@ -99,9 +100,7 @@ abstract class AmazonCore{
      *
      * This constructor is called when initializing all objects in this library.
      * The parameters are passed by the child objects' constructors.
-     * @param string $s [optional] <p>Name for the store you want to use as seen in the config file.
-     * If there is only one store defined in the config file, this parameter is not necessary.
-     * If there is more than one store and this is not set to a valid name, none of these objects will work.</p>
+     * @param array $config <p>The config file containing seller credentials and log settings</p>
      * @param boolean $mock [optional] <p>This is a flag for enabling Mock Mode.
      * When this is set to <b>TRUE</b>, the object will fetch responses from
      * files you specify instead of sending the requests to Amazon.
@@ -110,17 +109,14 @@ abstract class AmazonCore{
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.
      * When Mock Mode is enabled, the object will retrieve one of these files
      * from the list to use as a response. See <i>setMock</i> for more information.</p>
-     * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    protected function __construct($s = null, $mock = false, $m = null, $config = null){
-        if (is_null($config)){
-            $config = __DIR__.'/../../amazon-config.php';
-        }
-        $this->setConfig($config);
-        $this->setStore($s);
+    protected function __construct($config, $mock = false, $m = null){
+        $this->config = $config;
+        $this->setLogOptions();
+        $this->setMWSOptions();
         $this->setMock($mock,$m);
 
-        $this->env=__DIR__.'/../../environment.php';
+        $this->env=__DIR__.'/../environment.php';
         $this->options['SignatureVersion'] = 2;
         $this->options['SignatureMethod'] = 'HmacSHA256';
     }
@@ -213,7 +209,7 @@ abstract class AmazonCore{
                     $return = file_get_contents($url);
                 }
                 return $return;
-            } catch (Exception $e){
+            } catch (\Exception $e){
                 $this->log("Error when opening Mock File: $url - ".$e->getMessage(),'Warning');
                 return false;
             }
@@ -335,28 +331,6 @@ abstract class AmazonCore{
     }
 
     /**
-     * Set the config file.
-     *
-     * This method can be used to change the config file after the object has
-     * been initiated. The file will not be set if it cannot be found or read.
-     * This is useful for testing, in cases where you want to use a different file.
-     * @param string $path <p>The path to the config file.</p>
-     * @throws Exception If the file cannot be found or read.
-     */
-    public function setConfig($path){
-        if (file_exists($path) && is_readable($path)){
-            include($path);
-            $this->config = $path;
-            $this->setLogPath($logpath);
-            if (isset($AMAZON_SERVICE_URL)) {
-                $this->urlbase = rtrim($AMAZON_SERVICE_URL, '/') . '/';
-            }
-        } else {
-            throw new Exception("Config file does not exist or cannot be read! ($path)");
-        }
-    }
-
-    /**
      * Set the log file path.
      *
      * Use this method to change the log file used. This method is called
@@ -372,62 +346,82 @@ abstract class AmazonCore{
         if (file_exists($path) && is_readable($path)){
             $this->logpath = $path;
         } else {
-            throw new Exception("Log file does not exist or cannot be read! ($path)");
+            throw new \Exception("Log file does not exist or cannot be read! ($path)");
         }
 
     }
 
     /**
-     * Sets the store values.
+     * Sets log options.
      *
      * This method sets a number of key values from the config file. These values
-     * include your Merchant ID, Access Key ID, and Secret Key, and are critical
-     * for making requests with Amazon. If the store cannot be found in the
+     * include your Merchant ID, Access Key ID, and Secret Key, Service URL, Auth Token
+     * and are critical for making requests with Amazon. If the store cannot be found in the
      * config file, or if any of the key values are missing,
      * the incident will be logged.
-     * @param string $s [optional] <p>The store name to look for.
-     * This parameter is not required if there is only one store defined in the config file.</p>
      * @throws Exception If the file can't be found.
      */
-    public function setStore($s=null){
-        if (file_exists($this->config)){
-            include($this->config);
+    private function setLogOptions(){
+        if(array_key_exists('MWS_LOG_MUTE', $this->config)){
+            $this->logmute = strtolower($this->config['MWS_LOG_MUTE'])==='yes';
         } else {
-            throw new Exception("Config file does not exist!");
+            $this->logmute = false;
         }
 
-        if (empty($store) || !is_array($store)) {
-            throw new Exception("No stores defined!");
-        }
-
-        if (!isset($s) && count($store)===1) {
-            $s=key($store);
-        }
-
-        if(array_key_exists($s, $store)){
-            $this->storeName = $s;
-            if(array_key_exists('merchantId', $store[$s])){
-                $this->options['SellerId'] = $store[$s]['merchantId'];
-            } else {
-                $this->log("Merchant ID is missing!",'Warning');
-            }
-            if(array_key_exists('keyId', $store[$s])){
-                $this->options['AWSAccessKeyId'] = $store[$s]['keyId'];
-            } else {
-                $this->log("Access Key ID is missing!",'Warning');
-            }
-            if(!array_key_exists('secretKey', $store[$s])){
-                $this->log("Secret Key is missing!",'Warning');
-            }
-            if (!empty($store[$s]['serviceUrl'])) {
-                $this->urlbase = $store[$s]['serviceUrl'];
-            }
-            if (!empty($store[$s]['MWSAuthToken'])) {
-                $this->options['MWSAuthToken'] = $store[$s]['MWSAuthToken'];
-            }
-
+        if(array_key_exists('MWS_LOG_FILE', $this->config)){
+            $this->setLogPath($this->config['MWS_LOG_FILE']);
         } else {
-            $this->log("Store $s does not exist!",'Warning');
+            $this->log("MWS Log File is missing!",'Urgent');
+            throw new \Exception("MWS Log File is missing!");
+        }
+
+        if(array_key_exists('MWS_LOG_FUNCTION', $this->config)){
+            $this->logfunction = $this->config['MWS_LOG_FUNCTION'];
+        }
+    }
+
+    /**
+     * Sets options.
+     *
+     * This method sets a number of key values from the config file. These values
+     * include your Merchant ID, Access Key ID, and Secret Key, Service URL, Auth Token
+     * and are critical for making requests with Amazon. If the store cannot be found in the
+     * config file, or if any of the key values are missing,
+     * the incident will be logged.
+     * @throws Exception If the file can't be found.
+     */
+    private function setMWSOptions(){
+        if(array_key_exists('MWS_SELLER_ID', $this->config)){
+            $this->options['SellerId'] = $this->config['MWS_SELLER_ID'];
+        } else {
+            $this->log("Seller ID is missing!",'Urgent');
+            throw new \Exception("Seller ID is missing!");
+        }
+
+        if(array_key_exists('MWS_ACCESS_KEY', $this->config)){
+            $this->options['AWSAccessKeyId'] = $this->config['MWS_ACCESS_KEY'];
+        } else {
+            $this->log("Access Key ID is missing!",'Urgent');
+            throw new \Exception("Access Key ID is missing!");
+        }
+
+        if(!array_key_exists('MWS_SECRET_KEY', $this->config)){
+            $this->log("Secret Key is missing!",'Urgent');
+            throw new \Exception("Secret Key is missing!");
+        }
+
+        if(array_key_exists('MWS_SERVICE_URL', $this->config)){
+            $this->urlbase = $this->config['MWS_SERVICE_URL'];
+        } else {
+            $this->log("Service URL is missing!",'Urgent');
+            throw new \Exception("Service URL is missing!");
+        }
+
+        if(array_key_exists('MWS_AUTH_TOKEN', $this->config)){
+            $this->options['MWSAuthToken'] = $this->config['MWS_AUTH_TOKEN'];
+        } else {
+            $this->log("Auth Token is missing!",'Urgent');
+            throw new \Exception("Auth Token is missing!");
         }
     }
 
@@ -459,23 +453,22 @@ abstract class AmazonCore{
         if ($msg != false) {
             $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-            if (file_exists($this->config)){
-                include($this->config);
-            } else {
-                throw new Exception("Config file does not exist!");
-            }
-            if (isset($logfunction) && $logfunction != '' && function_exists($logfunction)){
+            if (isset($this->logfunction) && $this->logfunction != '' && function_exists($this->logfunction)){
                 switch ($level){
-                   case('Info'): $loglevel = LOG_INFO; break;
-                   case('Throttle'): $loglevel = LOG_INFO; break;
-                   case('Warning'): $loglevel = LOG_NOTICE; break;
-                   case('Urgent'): $loglevel = LOG_ERR; break;
-                   default: $loglevel = LOG_INFO;
+                    case('Info'): $loglevel = LOG_INFO; break;
+                    case('Throttle'): $loglevel = LOG_INFO; break;
+                    case('Warning'): $loglevel = LOG_NOTICE; break;
+                    case('Urgent'): $loglevel = LOG_ERR; break;
+                    default: $loglevel = LOG_INFO;
                 }
-                call_user_func($logfunction,$msg,$loglevel);
+                if ($this->logfunction === 'syslog') {
+                    call_user_func($this->logfunction, $loglevel, $msg);
+                } else {
+                    call_user_func($this->logfunction, $msg, $loglevel);
+                }
             }
 
-            if (isset($muteLog) && $muteLog == true){
+            if ($this->logmute){
                 return;
             }
 
@@ -512,7 +505,7 @@ abstract class AmazonCore{
                 fwrite($fd,$str . "\r\n");
                 fclose($fd);
             } else {
-                throw new Exception('Error! Cannot write to log! ('.$this->logpath.')');
+                throw new \Exception('Error! Cannot write to log! ('.$this->logpath.')');
             }
         } else {
             return false;
@@ -552,7 +545,7 @@ abstract class AmazonCore{
         } else if (is_string($time)) {
             $time = strtotime($time);
         } else {
-            throw new InvalidArgumentException('Invalid time input given');
+            throw new \InvalidArgumentException('Invalid time input given');
         }
         return date('Y-m-d\TH:i:sO',$time-120);
 
@@ -568,18 +561,7 @@ abstract class AmazonCore{
      * @throws Exception if config file or secret key is missing
      */
     protected function genQuery(){
-        if (file_exists($this->config)){
-            include($this->config);
-        } else {
-            throw new Exception("Config file does not exist!");
-        }
-
-        if (array_key_exists($this->storeName, $store) && array_key_exists('secretKey', $store[$this->storeName])){
-            $secretKey = $store[$this->storeName]['secretKey'];
-        } else {
-            throw new Exception("Secret Key is missing!");
-        }
-
+        $secretKey = $this->config['MWS_SECRET_KEY'];
         unset($this->options['Signature']);
         $this->options['Timestamp'] = $this->genTime();
         $this->options['Signature'] = $this->_signParameters($this->options, $secretKey);
@@ -880,7 +862,7 @@ abstract class AmazonCore{
             $stringToSign = $this->_calculateStringToSignV2($parameters);
 //            var_dump($stringToSign);
         } else {
-            throw new Exception("Invalid Signature Version specified");
+            throw new \Exception("Invalid Signature Version specified");
         }
         return $this->_sign($stringToSign, $key, $algorithm);
     }
@@ -922,7 +904,7 @@ abstract class AmazonCore{
         } else if ($algorithm === 'HmacSHA256') {
             $hash = 'sha256';
         } else {
-            throw new Exception ("Non-supported signing method specified");
+            throw new \Exception ("Non-supported signing method specified");
         }
 
         return base64_encode(

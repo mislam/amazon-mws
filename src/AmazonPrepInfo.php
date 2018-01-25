@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Fetches preparation instructions for items.
@@ -9,7 +9,7 @@ namespace SellerCrew\AmazonMWS;
  * to prepare various items for transport in an inbound fulfillment shipment.
  * In order to fetch this information, a list of item identifiers is required.
  */
-class AmazonPrepInfo extends AmazonInboundCore implements Iterator {
+class AmazonPrepInfo extends AmazonInboundCore implements \Iterator {
     protected $prepList;
     protected $invalidList;
     protected $i = 0;

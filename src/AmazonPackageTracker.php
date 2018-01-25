@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Fetches package tracking info from Amazon.
@@ -19,16 +19,15 @@ class AmazonPackageTracker extends AmazonOutboundCore{
      * on these parameters and common methods.
      * Please note that an extra parameter comes before the usual Mock Mode parameters,
      * so be careful when setting up the object.
-     * @param string $s [optional] <p>Name for the store you want to use.
-     * This parameter is optional if only one store is defined in the config file.</p>
+     * @param array $config <p>The config file containing seller credentials and log settings</p>
      * @param string $id [optional] <p>The package ID to set for the object.</p>
      * @param boolean $mock [optional] <p>This is a flag for enabling Mock Mode.
      * This defaults to <b>FALSE</b>.</p>
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.</p>
      * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    public function __construct($s = null, $id = null, $mock = false, $m = null, $config = null) {
-        parent::__construct($s, $mock, $m, $config);
+    public function __construct($config, $id = null, $mock = false, $m = null) {
+        parent::__construct($config, $mock, $m);
 
         if($id){
             $this->setPackageNumber($id);

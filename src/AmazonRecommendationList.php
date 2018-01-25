@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of active recommendations from Amazon.
@@ -11,7 +11,7 @@ namespace SellerCrew\AmazonMWS;
  * configured marketplace is used by default.
  * This class can be iterated over, but only when the category parameter is set.
  */
-class AmazonRecommendationList extends AmazonRecommendationCore implements Iterator {
+class AmazonRecommendationList extends AmazonRecommendationCore implements \Iterator {
     protected $updated;
     protected $list;
     protected $listkey;

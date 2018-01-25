@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of subscriptions from Amazon.
@@ -9,7 +9,7 @@ namespace SellerCrew\AmazonMWS;
  * for a particular marketplace. In order to do this, a marketplace ID is needed.
  * The current store's configured marketplace is used by default.
  */
-class AmazonSubscriptionList extends AmazonSubscriptionCore implements Iterator{
+class AmazonSubscriptionList extends AmazonSubscriptionCore implements \Iterator{
     protected $list;
     protected $i = 0;
 

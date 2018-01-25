@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of Orders and turn them into an array of AmazonOrder objects.
@@ -10,7 +10,7 @@ namespace SellerCrew\AmazonMWS;
  * are available to narrow the number of orders returned, but none of them
  * are required. This object can use tokens when retrieving the list.
  */
-class AmazonOrderList extends AmazonOrderCore implements Iterator{
+class AmazonOrderList extends AmazonOrderCore implements \Iterator{
     protected $orderList;
     protected $i = 0;
     protected $tokenFlag = false;
@@ -23,15 +23,14 @@ class AmazonOrderList extends AmazonOrderCore implements Iterator{
      * The parameters are passed to the parent constructor, which are
      * in turn passed to the AmazonCore constructor. See it for more information
      * on these parameters and common methods.
-     * @param string $s [optional] <p>Name for the store you want to use.
-     * This parameter is optional if only one store is defined in the config file.</p>
+     * @param array $config <p>The config file containing seller credentials and log settings</p>
      * @param boolean $mock [optional] <p>This is a flag for enabling Mock Mode.
      * This defaults to <b>FALSE</b>.</p>
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.</p>
      * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    public function __construct($s = null, $mock = false, $m = null, $config = null){
-        parent::__construct($s, $mock, $m, $config);
+    public function __construct($config, $mock = false, $m = null){
+        parent::__construct($config, $mock, $m);
         include($this->env);
         $this->resetMarketplaceFilter();
 
@@ -113,7 +112,7 @@ class AmazonOrderList extends AmazonOrderCore implements Iterator{
                 return false;
             }
 
-        } catch (Exception $e){
+        } catch (\Exception $e){
             $this->log('Error: '.$e->getMessage(),'Warning');
             return false;
         }
@@ -202,18 +201,6 @@ class AmazonOrderList extends AmazonOrderCore implements Iterator{
             if(preg_match("#MarketplaceId#",$op)){
                 unset($this->options[$op]);
             }
-        }
-
-        //reset to store's default marketplace
-        if (file_exists($this->config)){
-            include($this->config);
-        } else {
-            throw new Exception('Config file does not exist!');
-        }
-        if(isset($store[$this->storeName]) && array_key_exists('marketplaceId', $store[$this->storeName])){
-            $this->options['MarketplaceId.Id.1'] = $store[$this->storeName]['marketplaceId'];
-        } else {
-            $this->log("Marketplace ID is missing",'Urgent');
         }
     }
 
@@ -480,7 +467,7 @@ class AmazonOrderList extends AmazonOrderCore implements Iterator{
             if ($key != 'Order'){
                 break;
             }
-            $this->orderList[$this->index] = new AmazonOrder($this->storeName,null,$data,$this->mockMode,$this->mockFiles,$this->config);
+            $this->orderList[$this->index] = new AmazonOrder($this->config,null,$data,$this->mockMode,$this->mockFiles);
             $this->orderList[$this->index]->setLogPath($this->logpath);
             $this->orderList[$this->index]->mockIndex = $this->mockIndex;
             $this->index++;

@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Creates a Merchant Fulfillment Shipment Amazon.
@@ -18,15 +18,14 @@ class AmazonMerchantShipmentCreator extends AmazonMerchantCore {
      * The parameters are passed to the parent constructor, which are
      * in turn passed to the AmazonCore constructor. See it for more information
      * on these parameters and common methods.
-     * @param string $s [optional] <p>Name for the store you want to use.
-     * This parameter is optional if only one store is defined in the config file.</p>
+     * @param array $config <p>The config file containing seller credentials and log settings</p>
      * @param boolean $mock [optional] <p>This is a flag for enabling Mock Mode.
      * This defaults to <b>FALSE</b>.</p>
      * @param array|string $m [optional] <p>The files (or file) to use in Mock Mode.</p>
      * @param string $config [optional] <p>An alternate config file to set. Used for testing.</p>
      */
-    public function __construct($s = null, $mock = false, $m = null, $config = null){
-        parent::__construct($s, $mock, $m, $config);
+    public function __construct($config, $mock = false, $m = null){
+        parent::__construct($config, $mock, $m);
 
         $this->options['Action'] = 'CreateShipment';
     }
@@ -318,7 +317,7 @@ class AmazonMerchantShipmentCreator extends AmazonMerchantCore {
     public function setMaxArrivalDate($d) {
         try{
             $this->options['ShipmentRequestDetails.MustArriveByDate'] = $this->genTime($d);
-        } catch (Exception $e){
+        } catch (\Exception $e){
             unset($this->options['ShipmentRequestDetails.MustArriveByDate']);
             $this->log('Error: '.$e->getMessage(), 'Warning');
             return false;
@@ -335,7 +334,7 @@ class AmazonMerchantShipmentCreator extends AmazonMerchantCore {
     public function setShipDate($d) {
         try{
             $this->options['ShipmentRequestDetails.ShipDate'] = $this->genTime($d);
-        } catch (Exception $e){
+        } catch (\Exception $e){
             unset($this->options['ShipmentRequestDetails.ShipDate']);
             $this->log('Error: '.$e->getMessage(), 'Warning');
             return false;
@@ -516,7 +515,7 @@ class AmazonMerchantShipmentCreator extends AmazonMerchantCore {
      * @return AmazonMerchantServiceList container for services
      */
     public function fetchServices() {
-        $services = new AmazonMerchantServiceList($this->storeName, $this->mockMode, $this->mockFiles, $this->config);
+        $services = new AmazonMerchantServiceList($this->config, $this->mockMode, $this->mockFiles);
         $services->mockIndex = $this->mockIndex;
         $services->setLogPath($this->logpath);
         $services->setDetailsByCreator($this);
@@ -602,7 +601,7 @@ class AmazonMerchantShipmentCreator extends AmazonMerchantCore {
             return false;
         }
 
-        $this->shipment = new AmazonMerchantShipment($this->storeName, NULL, $xml, $this->mockMode, $this->mockFiles, $this->config);
+        $this->shipment = new AmazonMerchantShipment($this->config, NULL, $xml, $this->mockMode, $this->mockFiles);
         $this->shipment->setLogPath($this->logpath);
         $this->shipment->mockIndex = $this->mockIndex;
     }

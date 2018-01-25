@@ -1,6 +1,6 @@
 <?php
 
-namespace SellerCrew\AmazonMWS;
+namespace AmazonMWS;
 
 /**
  * Pulls a list of financial event groups from Amazon.
@@ -9,7 +9,7 @@ namespace SellerCrew\AmazonMWS;
  * from Amazon. In order to do this, a start date is required. This
  * object can use tokens when retrieving the list.
  */
-class AmazonFinancialGroupList extends AmazonFinanceCore implements Iterator {
+class AmazonFinancialGroupList extends AmazonFinanceCore implements \Iterator {
     protected $tokenFlag = false;
     protected $tokenUseFlag = false;
     protected $list;

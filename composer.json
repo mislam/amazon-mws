@@ -1,14 +1,14 @@
 {
     "name": "sellercrew/amazonmws",
     "type": "library",
-    "description": "An open-source library to connect to Amazon's MWS web services in an object-oriented manner, with a focus on intuitive usage.",
+    "description": "A library to connect to Amazon MWS web services",
     "require": {
         "php": ">=5.4",
         "ext-curl": "*"
     },
     "autoload": {
-        "psr-4": [
-            "SellerCrew\\AmazonMWS\\": "src/"
-        ]
+        "psr-4": {
+            "AmazonMWS\\": "src/"
+        }
     }
 }
