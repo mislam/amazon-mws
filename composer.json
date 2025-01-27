@@ -1,7 +1,23 @@
 {
-    "name": "sellercrew/amazonmws",
+    "name": "mislam/amazon-mws",
     "type": "library",
     "description": "A library to connect to Amazon MWS web services",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Mohammad Islam",
+            "email": "hi@mislam.dev",
+            "homepage": "https://mislam.dev",
+            "role": "Developer"
+        }
+    ],
+    "keywords": [
+        "amazon",
+        "mws",
+        "marketplace",
+        "web",
+        "services"
+    ],
     "require": {
         "php": ">=5.4",
         "ext-curl": "*"
